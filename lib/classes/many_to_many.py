@@ -1,6 +1,6 @@
 class Article:
     all = []
-    
+    #Creating different instance variables
     def __init__(self, author, magazine, title):
         self.author = author
         self.magazine = magazine
@@ -14,11 +14,15 @@ class Article:
     
     @title.setter
     def title(self, value):
-        if hasattr(self, '_title') and self._title is not None:
-            return
-        if isinstance(value, str) and 5 <= len(value) <= 50:
-            self._title = value
         
+        if self._title:
+            return
+        
+        #verifying whether the title is a string and is withing the given length
+        if isinstance(value, str) and 5 <= len(value.strip()) <= 50:
+            self._title = value.strip()
+
+
 class Author:
     def __init__(self, name):
         self._name = None
@@ -30,33 +34,43 @@ class Author:
     
     @name.setter
     def name(self, value):
-        if hasattr(self, '_name') and self._name is not None:
+        # Prevent resetting after initialization
+        if self._name:
             return
-        if isinstance(value, str) and len(value) > 0:
-            self._name = value
+        
+        # Using bool validation to check for different strings
+        if isinstance(value, str) and bool(value.strip()):
+            self._name = value.strip()
 
     def articles(self):
-        return [article for article in Article.all if article.author == self]
+        
+        return [a for a in Article.all if a.author is self]
 
     def magazines(self):
-        magazine_list = []
-        for article in self.articles():
-            if article.magazine not in magazine_list:
-                magazine_list.append(article.magazine)
-        return magazine_list
+        mags = []
+        for art in self.articles():
+            if art.magazine not in mags:
+                mags.append(art.magazine)
+        return mags
 
     def add_article(self, magazine, title):
         return Article(self, magazine, title)
 
     def topic_areas(self):
-        if len(self.articles()) == 0:
+        arts = self.articles()
+        if not arts:
             return None
-        return list(set([article.magazine.category for article in self.articles()]))
+        
+       #Returning the list as a set
+        return list({a.magazine.category for a in arts})
+
 
 class Magazine:
     def __init__(self, name, category):
-        self._name = name
-        self._category = category
+        self._name = None
+        self._category = None
+        self.name = name
+        self.category = category
 
     @property
     def name(self):
@@ -64,8 +78,9 @@ class Magazine:
     
     @name.setter
     def name(self, value):
-        if isinstance(value, str) and 2 <= len(value) <= 16:
-            self._name = value
+        
+        if isinstance(value, str) and 2 <= len(value.strip()) <= 16:
+            self._name = value.strip()
     
     @property
     def category(self):
@@ -73,27 +88,31 @@ class Magazine:
     
     @category.setter
     def category(self, value):
-        if isinstance(value, str) and len(value) > 0:
-            self._category = value
+        # ensures at least one visible character
+        if isinstance(value, str) and len(value.strip()) > 0:
+            self._category = value.strip()
 
     def articles(self):
-        return [article for article in Article.all if article.magazine == self]
+        # Simple filter using list comp
+        return [a for a in Article.all if a.magazine is self]
 
     def contributors(self):
-        return list(set([article.author for article in self.articles()]))
+        # Use set comprehension again
+        return list({a.author for a in self.articles()})
 
     def article_titles(self):
-        if len(self.articles()) == 0:
+        arts = self.articles()
+        if not arts:
             return None
-        return [article.title for article in self.articles()]
+        return [a.title for a in arts]
 
     def contributing_authors(self):
-        author_counts = {}
-        for article in self.articles():
-            if article.author in author_counts:
-                author_counts[article.author] += 1
-            else:
-                author_counts[article.author] = 1
+        # Count articles per author
+        counts = {}
+        for art in self.articles():
+            counts[art.author] = counts.get(art.author, 0) + 1
         
-        result = [author for author, count in author_counts.items() if count > 2]
-        return result if len(result) > 0 else None
+        # Authors with >2 articles
+        many = [author for author, c in counts.items() if c > 2]
+        
+        return many or None
